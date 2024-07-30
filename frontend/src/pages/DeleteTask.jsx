@@ -1,6 +1,7 @@
 import { FaCheck } from "react-icons/fa"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import axios from "axios";
+import { FaXmark } from "react-icons/fa6";
 
 const DeleteTask = () => {
 
@@ -29,11 +30,18 @@ const DeleteTask = () => {
             <div className="bg-white text-center flex flex-col items-center gap-3 rounded-lg p-3">
                 <h1 className="text-gray-800 text-2xl">Delete Task</h1>
                 <p className="text-gray-500">Are you sure you want to delete this task ?</p>
-                <button onClick={handleDelete}>
-                    <Link to="">
-                        <FaCheck className="text-green-500 text-2xl" />
-                    </Link>
-                </button>
+                <div className="flex items-center gap-5">
+                    <button onClick={handleDelete}>
+                        <Link to="">
+                            <FaCheck className="text-green-500 text-2xl" />
+                        </Link>
+                    </button>
+                    <button >
+                        <Link to="/tasks">
+                            <FaXmark className="text-red-500 text-2xl" />
+                        </Link>
+                    </button>
+                </div>
             </div>
         </section>
     )
