@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import Profile from './pages/Profile';
 
 const App = () => {
 
@@ -19,6 +20,10 @@ const App = () => {
               path="/"
               exact
               element={user ? <Home /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/profile"
+              element={user ? <Profile /> : <Navigate to="/login" />}
             />
             <Route
               path="/login"

@@ -19,12 +19,14 @@ const Task = require('./models/Task'); */
 // Routes
 const tasksRouter = require('./routes/tasks');
 const authRouter = require('./routes/user');
+const profileRouter = require('./routes/profile');
 
 const port = process.env.PORT || 5000;
 
 // Middleware
 app.use('/api/tasks', tasksRouter);
 app.use("/api/auth", authRouter);
+app.use('/api/profiles', profileRouter);
 
 // Default Route
 app.get('/', (req, res) => {

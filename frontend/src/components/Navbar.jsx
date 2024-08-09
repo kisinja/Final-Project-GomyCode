@@ -24,7 +24,8 @@ const Navbar = () => {
 
                 <nav>
                     {user && (
-                        <div className="flex gap-2 items-center">
+                        <div className="flex gap-5 items-center">
+                            <Link to="/profile" className="text-gray-600">My profile</Link>
                             <span className="text-gray-600">{user.email}</span>
                             <button onClick={handleClick}>
                                 Logout
