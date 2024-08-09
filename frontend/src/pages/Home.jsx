@@ -1,50 +1,53 @@
-// src/components/Home.js
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCookies } from 'react-cookie';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../slices/authSlice';
-import { ToastContainer, toast } from 'react-toastify';
+import { useEffect } from "react";
+import TaskDetails from "../components/TaskDetails";
+import TasksForm from "../components/TaskForm";
+import { useTaskContext } from "../hooks/useTaskContext";
+import { useAuthContext } from '../hooks/useAuthContext';
 
 const Home = () => {
-    const navigate = useNavigate();
-    const dispatch = useDispatch();
-    const { status } = useSelector((state) => state.auth);
-    const user = useSelector((state) => state.auth.user.user);
+
+    const BASE_URL = "http://localhost:8430/api/tasks";
+
+    const { tasks, dispatch } = useTaskContext();
+
+
+    const { user } = useAuthContext();
 
     useEffect(() => {
-        if (!user) {
-            navigate('/login');
-        }
-
-        console.log(user);
-    }, [user, navigate]);
-
-    useEffect(() => {
-        if (status === 'succeeded') {
-            toast(`Hello ${user.username}`, {
-                position: 'top-right',
+        document.title = "Task Buddy | Home";
+        const fetchTasks = async () => {
+            const res = await fetch(BASE_URL, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${user.token}`
+                }
             });
-        } else if (status === 'failed') {
-            navigate('/login');
-        }
-    }, [status, user, navigate]);
+            const data = await res.json();
+            console.log(data);
+            if (res.ok) {
+                dispatch({ type: 'SET_TASKS', payload: data });
+            } else {
+                console.error(data.message);
+            }
+        };
 
-    const handleLogout = () => {
-        dispatch(logout());
-        navigate('/login');
-    };
+        if (user) {
+            fetchTasks();
+        }
+
+    }, [user, dispatch]);
 
     return (
-        <>
-            <div className="home_page">
-                <h4>
-                    Hi, {user.username}
-                </h4>
-                <button onClick={handleLogout}>LOGOUT</button>
+        <div className="home">
+            <div className="tasks">
+
+                {tasks && tasks.map(task => (
+                    <TaskDetails key={task._id} task={task} />
+                ))}
             </div>
-            <ToastContainer />
-        </>
+            <TasksForm />
+        </div>
     );
 };
 

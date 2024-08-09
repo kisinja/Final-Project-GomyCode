@@ -1,54 +1,50 @@
-import { useEffect } from "react";
-import { useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom"
+import { useLogout } from '../hooks/useLogout';
+import { useAuthContext } from "../hooks/useAuthContext";
 
 const Navbar = () => {
+    const { logout } = useLogout();
+    const { user } = useAuthContext();
 
-    const user = useSelector((state) => state.auth.user);
-
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        if (!user) {
-            navigate('/login');
-        }
-    }, [user, navigate]);
-
+    const handleClick = () => {
+        logout();
+    };
 
     return (
-        <nav className="bg-white flex justify-between items-center py-3 px-[5%] sticky top-0 z-[100000]">
-            <div className="logo py-2 px-6 rounded-lg">
-                <h1 className="text-white">Task Manager</h1>
+        <header className="sticky top-0">
+            <div className="container">
+                <Link to="/">
+                    <h1 className="font-semibold text-shadow-md text-3xl text-black tracking-wider" id="logo">
+                        Do
+                        <span className="text-gray-800">
+                            Tasker
+                        </span>
+                    </h1>
+                </Link>
+
+                <nav>
+                    {user && (
+                        <div className="flex gap-2 items-center">
+                            <span className="text-gray-600">{user.email}</span>
+                            <button onClick={handleClick}>
+                                Logout
+                            </button>
+                        </div>
+                    )}
+                    {!user && (
+                        <div>
+                            <Link to="/login">
+                                Login
+                            </Link>
+                            <Link to="/signup">
+                                Sign Up
+                            </Link>
+                        </div>
+                    )}
+                </nav>
             </div>
-            <ul className="flex items-center gap-8">
-                <li>
-                    <Link to="/">Home</Link>
-                </li>
-                {user ? (
-                    <>
-                        <li>
-                            <a href="#">Hi, {user.user.username}</a>
-                        </li>
-                        <li>
-                            <Link to="/tasks">Tasks</Link>
-                        </li>
-                        <li>
-                            <a href="/logout" className="bg-red-500 text-white p-2 hover:bg-red-600 rounded-lg">Logout</a>
-                        </li>
-                    </>
-                ) : (
-                    <>
-                        <li>
-                            <a href="/login">Login</a>
-                        </li>
-                        <li>
-                            <a href="/register">Register</a>
-                        </li>
-                    </>
-                )}
-            </ul >
-        </nav >
+        </header>
     )
 }
 
-export default Navbar;
+export default Navbar

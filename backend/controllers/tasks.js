@@ -1,111 +1,163 @@
-const Task = require('../models/Task');
-const User = require('../models/User');
+const Task = require("../models/Task");
+const mongoose = require("mongoose");
 
-const getUserTasks = async (req, res) => {
-
-    const user = req.params.id;
-    const userExists = await User.findById(user);
-    if (!userExists) {
-        return res.status(404).json({ message: 'User not found' });
-    }
-
+// GET all tasks
+const getAllTasks = async (req, res) => {
     try {
-        const tasks = await Task.find({ userId: user });
-        if (!tasks || tasks.length === 0) {
-            return res.status(404).json({ message: 'No tasks found' });
-        }
-        res.status(200).json({ tasks });
+
+        const userId = req.user._id;
+
+        const tasks = await Task.find({ user_id: userId }).sort({ createdAt: -1 });
+        res.json(tasks).status(200);
     } catch (error) {
-        res.status(500).json({ message: error.message });
-        console.log(error);
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
 };
 
-// Create Task
-const createTask = async (req, res) => {
-    const userId = req.body.userId;
-    const userExists = await User.findById(userId);
-    if (!userExists) {
-        return res.status(404).json({ message: 'User not found' });
-    }
+// GET a single task by ID
+const getTaskById = async (req, res) => {
     try {
-        const task = await Task.create({
-            ...req.body,
-            userId,
-        });
-        if (!task) {
-            return res.status(400).json({ message: 'Task creation failed' });
-        }
+        const { id } = req.params;
 
-        res.status(201).json({ task });
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-        console.log(err.message);
+        // Check if the ID is a valid mongoose ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({ message: "Invalid task ID" });
+        };
+
+        const task = await Task.findById(id);
+        if (task) {
+            res.json(task).status(200);
+        } else {
+            return res.status(404).json({ message: "Task not found" });
+        }
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
 };
 
-// Update Task
+// POST a new task
+const createTask = async (req, res) => {
+
+    const { title, description } = req.body;
+
+    let emptyFields = [];
+
+    if (!title) {
+        emptyFields.push("title");
+    };
+
+    if (!description) {
+        emptyFields.push("description");
+    };
+
+    if (emptyFields.length > 0) {
+        /* return res.status(400).json({ error: `Please provide a valid ${emptyFields}` }); */
+
+        return res.status(400).json({ error: 'Please fill in all the required fields !!', emptyFields });
+    };
+
+    try {
+
+        const user_id = req.user._id
+
+        const task = await Task.create({
+            title,
+            description,
+            user_id
+        });
+        if (task) {
+            res.status(201).json(task);
+        } else {
+            return res.status(400).json({ message: "Task creation failed" });
+        }
+    } catch (error) {
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// PUT an updated task
 const updateTask = async (req, res) => {
     try {
-        const user = req.user._id;
+        const { id } = req.params;
 
-        const taskExists = await Task.findOne({ userId: user, _id: req.params.id });
-        if (!taskExists) {
-            return res.status(404).json({ message: 'Task not found' });
+        // Check if the ID is a valid mongoose ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({ message: "Invalid task ID" });
+        };
+
+
+        const task = await Task.findByIdAndUpdate({ _id: id }, req.body, { new: true });
+
+        if (task) {
+            res.json(task).status(200);
+        } else {
+            return res.status(404).json({ message: "Task not found" });
         }
-
-        const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
-
-        if (!task) {
-            return res.status(400).json({ message: 'Task update failed' });
-        }
-
-        res.status(200).json({ task });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
-        console.log(error.message);
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
+
 };
 
-// Delete Task
+// DELETE a task
 const deleteTask = async (req, res) => {
     try {
-        const task = await Task.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
 
-        if (!task) {
-            return res.status(400).json({ message: 'Task deletion failed' });
+        // Check if the ID is a valid mongoose ID
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({ message: "Invalid task ID" });
+        };
+
+        const task = await Task.findByIdAndDelete({ _id: id });
+
+        if (task) {
+            res.json(task).status(200);
+        } else {
+            return res.status(404).json({ message: "Task not found" });
         }
 
-        res.status(200).json({ message: 'Task deleted' });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
-        console.log(error.message);
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
 };
 
-// Get task by id
-const getTask = async (req, res) => {
+// Search tasks by title
+const searchTasks = async (req, res) => {
     try {
-        const task = await Task.findById(req.params.id);
+        const query = req.query.q;
+        const tasks = await Task.find(
+            {
+                title: {
+                    $regex: query,
+                    $options: "i" // "i" makes it case-insensitive
+                }
+            }
+        ).select("title");
 
-        if (!task) {
-            return res.status(404).json({ message: 'Task not found' });
+        if (tasks) {
+            res.json(tasks).status(200);
+        } else {
+            return res.status(404).json({ message: "No tasks found" });
         }
-
-        res.status(200).json({ task });
-
     } catch (error) {
-        res.status(500).json({ message: error.message });
-        console.log(error.message);
+        console.error(`Error: ${error.message}`);
+        res.status(500).json({ error: error.message });
     }
 };
 
 module.exports = {
-    getUserTasks,
+    getAllTasks,
+    getTaskById,
     createTask,
     updateTask,
     deleteTask,
-    getTask
+    searchTasks
 };
